@@ -163,6 +163,25 @@ class LocationServiceTests: XCTestCase {
             
             }, testData: nil)
     }
+    
+    func testGetAddressFromLocationCoordinates() {
+        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        
+        SingleLocationManager.getAddressPropertiesForLocationCoordinates(38.8977, longitude: -77.0366) { (addressType) in
+            
+            switch addressType {
+            case .Success(let addressInformation):
+                print(addressInformation)
+                break
+            case .Error(let message):
+                XCTAssertTrue(false, "Received error when expecting address information. \(message)")
+            }
+            
+            dataExpectation.fulfill()
+        }
+        
+        self.waitForExpectationsWithTimeout(10, handler: nil)
+    }
 
     func testPerformanceExample() {
         // This is an example of a performance test case.

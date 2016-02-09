@@ -31,6 +31,32 @@ protocol SingleLocationProtocol {
     
 }
 
+struct AddressInformation {
+    let countryCode: String?
+    let country: String?
+    let postalCode: String?
+    let state: String?
+    let city: String?
+    let street: String?
+    let streetNumber: String?
+    
+    var serializableDictionary: [String: String] {
+        return [
+            "countryCode": countryCode ?? "",
+            "country": country ?? "",
+            "postalCode": postalCode ?? "",
+            "state": state ?? "",
+            "city": city ?? "",
+            "street": street ?? "",
+            "streetNumber": streetNumber ?? "",
+        ]
+    }
+}
+
+enum AddressInformationReturn {
+    case Success(AddressInformation)
+    case Error(String)
+}
 /* // EXAMPLE
 class ClassThatNeedsLocation {
     
@@ -144,5 +170,23 @@ class SingleLocationManager: NSObject, SingleLocationProtocol, CLLocationManager
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]){
         let location = locations[0]
         locationReceived(.Success(location))
+    }
+    
+    static func getAddressPropertiesForLocationCoordinates(latitude: Double, longitude: Double, completion: (AddressInformationReturn)->()) {
+        let location = CLLocation(latitude: latitude, longitude: longitude)
+        CLGeocoder().reverseGeocodeLocation(location) { (placemarks, error) -> Void in
+            if let errorUnwrapped = error {
+                completion(AddressInformationReturn.Error("Reverse geocoder failed with error: \(errorUnwrapped.localizedDescription)"))
+                return
+            }
+            guard let placemark = placemarks?[0] else {
+                completion(AddressInformationReturn.Error("No data received from reverse geocoder."))
+                return
+            }
+            
+            let addressInformation = AddressInformation(countryCode: placemark.ISOcountryCode, country: placemark.country , postalCode: placemark.postalCode, state: placemark.administrativeArea, city: placemark.locality, street: placemark.thoroughfare, streetNumber: placemark.subThoroughfare)
+            
+            completion(AddressInformationReturn.Success(addressInformation))
+        }
     }
 }
