@@ -1,3 +1,5 @@
+.DS_Store
+
 # Xcode
 #
 build/
@@ -24,5 +26,11 @@ DerivedData
 ## AppCode files to ignore
 .idea/
 
-## Predix Webapp
-dist-zip/
+## Predix Webapp (with Foundation)
+**/node_modules
+**/bower_components
+**/build
+**/dist-zip
+.sass-cache
+**/*.log
+

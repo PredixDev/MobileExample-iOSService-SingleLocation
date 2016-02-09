@@ -1,0 +1,8 @@
+{
+  "name": "SingleLocation",
+  "version": "1.0",
+  "starter": "singlelocation-webapp",
+  "dependencies": {
+    "singlelocation-webapp": "0.0.1"
+  }
+}
