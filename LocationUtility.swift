@@ -2,7 +2,7 @@
 //  LocationUtility.swift
 //  PredixMobileReferenceApp
 //
-//  Created by Henderson, Jonathan (GE Global Research) on 2/3/16.
+//  Created by Henderson, Jonathan (GE Global Research) and Matt Hoffman on 2/3/16.
 //  Copyright © 2016 GE. All rights reserved.
 //
 

@@ -102,7 +102,7 @@ class LocationServiceTests: XCTestCase {
         
         // Calls our location service
         print("Calls our location service")
-        self.serviceTester(SingleLocationService.self, path: "http://pmapi/singlelocation", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
+        self.serviceTester(LocationService.self, path: "http://pmapi/location/single", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
             
             print("💥💥💥")
             
@@ -140,9 +140,23 @@ class LocationServiceTests: XCTestCase {
         }
     }
     
+    func testAddressSuccess(){
+        
+        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        
+        //Calls the location service with the coordinate parameters
+        self.serviceTester(LocationService.self, path: "http://pmapi/location/address?latitude=38.8977&longitude=-77.0366", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
+            
+            
+            
+            //fulfill our expectation
+            dataExpectation.fulfill()
+        }
+    }
+    
     func testLocationUnacceptedMethod() {
         // Our request url string
-        let path = "\(API_SCHEME)://\(PredixMobilityConfiguration.API_HOST)/singlelocation"
+        let path = "\(API_SCHEME)://\(PredixMobilityConfiguration.API_HOST)/location/single"
         
         // create a mutable request:
         let request = NSMutableURLRequest(URL: NSURL(string: path)!)
@@ -152,7 +166,7 @@ class LocationServiceTests: XCTestCase {
         
         // now we run the service tester. Since we're expecting an error, and our service only returns data when there are no errors, we
         // don't need a testData block. But, we will include a testResponse block to ensure our headers are being added properly.
-        self.serviceTester(SingleLocationService.self, request: request, expectedStatusCode: .MethodNotAllowed, testResponse: { (response: NSURLResponse) -> Void in
+        self.serviceTester(LocationService.self, request: request, expectedStatusCode: .MethodNotAllowed, testResponse: { (response: NSURLResponse) -> Void in
             
             // we need to cast the reponse. We could be more defensive here by optionally casting and doing an XCTAssert if it failed...
             
