@@ -66,7 +66,7 @@ enum Paths: String {
         case "/location/single":
             LocationService.performRequestSingle(method, url: url, response: response, responseReturn: responseReturn, dataReturn: dataReturn, requestComplete: requestComplete)
         case "/location/address":
-            break
+            LocationService.performRequestAddress(method, url: url, response: response, responseReturn: responseReturn, dataReturn: dataReturn, requestComplete: requestComplete)
         default:
             self.respondWithErrorStatus(.BadRequest, response, responseReturn, requestComplete)
             return
@@ -92,7 +92,7 @@ enum Paths: String {
             
             // This respondWithErrorStatus overload allows additional headers to be passed that will be added to the response.
             self.respondWithErrorStatus(HTTPStatusCode.MethodNotAllowed, response, responseReturn, requestComplete, headers)
-            
+ 
             return
         }
         
@@ -150,80 +150,99 @@ enum Paths: String {
         
     }
     
-//        if path.lowercaseString != "/\(self.serviceIdentifier)" || url.query != nil
-//        {
-//            // In this case, if the request URL is anything other than "http://pmapi/location" we're returning a 400 status code.
-//            self.respondWithErrorStatus(.BadRequest, response, responseReturn, requestComplete)
-//            return
-//        }
-        
-        
-        // now that we know our path is what we expect, we'll check the HTTP method. If it's anything other than "GET"
-        // we'll return a standard HTTP status used in that case.
-//        guard method == "GET" else
-//        {
-//            // According to the HTTP specification, a status code 405 (Method not allowed) must include an Allow header containing a list of valid methods.
-//            // this  demonstrates one way to accomplish this.
-//            let headers = ["Allow" : "GET"]
-//            
-//            // This respondWithErrorStatus overload allows additional headers to be passed that will be added to the response.
-//            self.respondWithErrorStatus(HTTPStatusCode.MethodNotAllowed, response, responseReturn, requestComplete, headers)
-//
-//            return
-//        }
     
-//        var responseData = [String: AnyObject]()
-//        SingleLocationManager.fetchSingleLocation { (locationType) -> Void in
-//            switch locationType {
-//            case .Success(let location):
-//                responseData["status"] = "success"
-//                responseData["latitude"] = "\(location.coordinate.latitude)"
-//                responseData["longitude"] = "\(location.coordinate.longitude)"
-//            case .Error(let errorType):
-//                switch errorType {
-//                case .Error(let message):
-//                    responseData["status"] = "error"
-//                    responseData["message"] = message
-//                }
-//            }
-//            
-//            
-//            // NSJSONSerialization.dataWithJSONObject can throw, so we'll do this in a do/try/catch statement.
-//            do
-//            {
-//                let data = try NSJSONSerialization.dataWithJSONObject(responseData, options: NSJSONWritingOptions(rawValue: 0))
-//
-//                
-//                // Now our JSON data object contains a serialized JSON dictionary ready for consumption by the caller.
-//                
-//                // Our service call is complete, now we call our blocks, in order.
-//                
-//                // the default response object is always pre-set with a 200 (OK) response code, so can be directly used when there are no problems.
-//                responseReturn(response)
-//                
-//                // we return the JSON object
-//                dataReturn(data)
-//                
-//                // An inform the caller the service call is complete
-//                requestComplete()
-//                
-//                // We don't need this return here, since we don't have any other code below, but in a more complex service call you may.
-//                // After requestComplete is called, you should always ensure no other code is executed in the method.
-//                return
-//            }
-//            catch let error
-//            {
-//                // Log the error
-//                PGSDKLogger.error("\(__FUNCTION__): JSON Serialization error: \(error)")
-//                
-//                // And return a 500 (Internal Server Error) status code reponse.
-//                self.respondWithErrorStatus(.InternalServerError, response, responseReturn, requestComplete)
-//                return
-//            }
-//        }
-
+    static func performRequestAddress(method: String, url: NSURL, response: NSHTTPURLResponse, responseReturn: responseReturnBlock, dataReturn: dataReturnBlock, requestComplete: requestCompleteBlock) {
+        
+        
+        
+        guard method == "GET" else
+        {
+            // According to the HTTP specification, a status code 405 (Method not allowed) must include an Allow header containing a list of valid methods.
+            // this  demonstrates one way to accomplish this.
+            let headers = ["Allow" : "GET"]
+            
+            // This respondWithErrorStatus overload allows additional headers to be passed that will be added to the response.
+            self.respondWithErrorStatus(HTTPStatusCode.MethodNotAllowed, response, responseReturn, requestComplete, headers)
+            
+            return
+        }
+        
+        guard let urlComponents = NSURLComponents(URL:url, resolvingAgainstBaseURL: false), queryItems = urlComponents.queryItems where queryItems.count == 2 else
+        {
+            self.respondWithErrorStatus(.BadRequest, description: "Expected exactly 2 query parameters: 'latitude' and 'longitude'", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
+            return
+        }
+        
+        guard let latitudeIndex = queryItems.indexOf({ (queryItem) -> Bool in
+            queryItem.name == "latitude"
+        }),
+        latitudeString = queryItems[latitudeIndex].value,
+        latitude = Double(latitudeString)
+        else {
+            self.respondWithErrorStatus(.BadRequest, description: "Parameter 'latitude' of type Double not found in query", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
+            return
+        }
+        
+        guard let longitudeIndex = queryItems.indexOf({ (queryItem) -> Bool in
+            queryItem.name == "longitude"
+        }),
+        longitudeString = queryItems[longitudeIndex].value,
+        longitude = Double(longitudeString)
+        else {
+            self.respondWithErrorStatus(.BadRequest, description: "Parameter 'longitude' of type Double not found in query", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
+            return
+        }
+        
+        var responseData = [String: String]()
+        GetReverseGeocode.getAddressPropertiesForLocationCoordinates(latitude, longitude: longitude) { (addressType) -> () in
+            switch addressType {
+            case .Success(let address):
+                responseData = address
+                responseData["status"] = "success"
+            case .Error(let message):
+                responseData["status"] = "error"
+                responseData["message"] = message
+            }
+            
+            
+            // NSJSONSerialization.dataWithJSONObject can throw, so we'll do this in a do/try/catch statement.
+            do
+            {
+                let data = try NSJSONSerialization.dataWithJSONObject(responseData, options: NSJSONWritingOptions(rawValue: 0))
+                
+                
+                // Now our JSON data object contains a serialized JSON dictionary ready for consumption by the caller.
+                
+                // Our service call is complete, now we call our blocks, in order.
+                
+                // the default response object is always pre-set with a 200 (OK) response code, so can be directly used when there are no problems.
+                responseReturn(response)
+                
+                // we return the JSON object
+                dataReturn(data)
+                
+                // An inform the caller the service call is complete
+                requestComplete()
+                
+                // We don't need this return here, since we don't have any other code below, but in a more complex service call you may.
+                // After requestComplete is called, you should always ensure no other code is executed in the method.
+                return
+            }
+            catch let error
+            {
+                // Log the error
+                PGSDKLogger.error("\(__FUNCTION__): JSON Serialization error: \(error)")
+                
+                // And return a 500 (Internal Server Error) status code reponse.
+                self.respondWithErrorStatus(.InternalServerError, response, responseReturn, requestComplete)
+                return
+            }
+            
+        }
     }
-    
+}
+
+
     
     /* ****************************
     The methods "registered" and "unregistered" are optional in the ServiceProtocol protocol. They are called when your service

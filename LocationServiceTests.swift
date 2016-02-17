@@ -147,6 +147,35 @@ class LocationServiceTests: XCTestCase {
         //Calls the location service with the coordinate parameters
         self.serviceTester(LocationService.self, path: "http://pmapi/location/address?latitude=38.8977&longitude=-77.0366", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
             
+            do {
+                guard let addressResponseDictionary = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0)) as? [String: AnyObject] else {
+                    
+                    XCTAssertTrue(false, "locationResponseDictionary was not the expected type: \(data)")
+                    return
+                }
+                
+                print(addressResponseDictionary)
+                /*
+                guard let locationResponseStatus = Status.init(rawValue: (addressResponseDictionary["status"] as? String) ?? "")  else
+                {
+                    XCTAssertTrue(false, "Status key with string value was not found in response data.")
+                    return
+                    
+                }
+                switch locationResponseStatus {
+                case .Success:
+                    print (addressResponseDictionary["latitude"])
+                    print (addressResponseDictionary["longitude"])
+                    XCTAssertNotNil(addressResponseDictionary["latitude"] as? String, "Latitude key with string value was not found in response data.")
+                    XCTAssertNotNil(addressResponseDictionary["longitude"] as? String, "Longitude key with string value was not found in response data.")
+                case .Error:
+                    print (addressResponseDictionary["message"])
+                    XCTAssertNotNil(addressResponseDictionary["message"] as? String, "Message key with string value was not found in response data")
+                }
+                */
+            } catch let error {
+                XCTAssertTrue(false, "JSON deserialization of the returned data failed: \(error)")
+            }
             
             
             //fulfill our expectation
@@ -181,7 +210,7 @@ class LocationServiceTests: XCTestCase {
     func testGetAddressFromLocationCoordinates() {
         let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
         
-        SingleLocationManager.getAddressPropertiesForLocationCoordinates(38.8977, longitude: -77.0366) { (addressType) in
+        GetReverseGeocode.getAddressPropertiesForLocationCoordinates(38.8977, longitude: -77.0366) { (addressType) in
             
             switch addressType {
             case .Success(let addressInformation):

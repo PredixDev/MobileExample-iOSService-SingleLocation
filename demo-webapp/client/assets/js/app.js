@@ -12,9 +12,17 @@
   ]).controller('singleLocationController',
     function($scope, $http){
       $scope.location = "Test";
-      $http.get('http://pmapi/singlelocation').then(function(response){
+      $http.get('http://pmapi/location/single').then(function(response){
         console.log("singlelocation response: ",response);
-        $scope.data = response.data;
+        $scope.coordinates = response.data;
+        return response.data;
+      }).then(function(location) {
+        $http.get('http://pmapi/location/address?' 
+          + 'latitude=' + location.latitude 
+          + '&longitude=' + location.longitude)
+        .then(function(response){
+          $scope.address = response.data;
+        });
       });
 
   })
