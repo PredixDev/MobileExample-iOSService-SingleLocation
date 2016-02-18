@@ -13,7 +13,7 @@ It is also assumed you have a basic knowledge of mobile iOS development using XC
   
   A) Open your Predix Mobile container app project. In the Project Manager in left-hand pane, expand the PredixMobileReferenceApp project, then expand the PredixMobileReferenceApp group. Within that group, expand the Classes group. In this group, create a group called "LocationService".
   
-  B) Add the files the `LocationService.swift` and `LocationUtility.swift` to this group, either by dragging from Finder, or by using **File -> Add File to "project"**. When using the add file dialog, ensure the files are copied to your project, and added to your PredixMobileReferenceApp target.
+  B) Add the files the `LocationService.swift`, `LocationUtility.swift`, and `AddressUtility.swift` to this group, either by dragging from Finder, or by using **File -> Add File to "project"**. When using the add file dialog, ensure the files are copied to your project, and added to your PredixMobileReferenceApp target.
   
   C) Likewise, add a "LocationService" group to your PredixMobileReferenceAppTests group. Add the LocationServiceTests.swift file to this group, ensuring that you copy the file, and add it to the PredixMobileReferenceAppTests unit testing target.
 
