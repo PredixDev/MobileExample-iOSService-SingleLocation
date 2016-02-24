@@ -19,7 +19,7 @@ It is also assumed you have a basic knowledge of mobile iOS development using XC
 
 2. Set the location authorization prompt in your `info.plist` file
 
-  For iOS, apps are required to ask for the user's permission to use location services.  iOS apps do this via a pop up modal. The developer must set the message to be shown to the user in this modal. If this message isn't set the pop-up modal asking for permission to use the user's location won't appear, and defaults to an unautorized state, barring the app from getting location information.
+  For iOS, apps are required to ask for the user's permission to use location services.  iOS apps do this via a pop up modal. The developer must set the message to be shown to the user in this modal. If this message isn't set the pop-up modal asking for permission to use the user's location won't appear, and defaults to an unauthorized state, barring the app from getting location information.
   
   To set the message for the modal for this service, you need to add and/or update the key `NSLocationWhenInUseUsageDescription`, with a message describing to the user why you are requesting their location, in your `info.plist`.
   
