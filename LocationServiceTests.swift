@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import PredixMobileReferenceApp
+@testable import PredixMobileiOS
 import PredixMobileSDK
 import CoreLocation
 
@@ -98,7 +98,7 @@ class LocationServiceTests: XCTestCase {
         // As service calls are asyncronous this entire interaction is wrapped in an XCTest expectation, and the timeout for expectations is 20 seconds.
         // You can create new expectations and fulfill them in the testResponse and/or testData blocks.
         // let's create an expectation, that we'll fulfill in the data block when we examine the return data. This will ensure our call actually does return data.
-        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        let dataExpectation = self.expectationWithDescription("\(#function): testData closure called expectation.")
         
         // Calls our location service
         print("Calls our location service")
@@ -142,7 +142,7 @@ class LocationServiceTests: XCTestCase {
     
     func testAddressSuccess(){
         
-        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        let dataExpectation = self.expectationWithDescription("\(#function): testData closure called expectation.")
         
         //Calls the location service with the coordinate parameters
         self.serviceTester(LocationService.self, path: "http://pmapi/location/address?latitude=38.8977&longitude=-77.0366", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
@@ -208,7 +208,7 @@ class LocationServiceTests: XCTestCase {
     }
     
     func testGetAddressFromLocationCoordinates() {
-        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        let dataExpectation = self.expectationWithDescription("\(#function): testData closure called expectation.")
         
         GetReverseGeocode.getAddressPropertiesForLocationCoordinates(38.8977, longitude: -77.0366) { (addressType) in
             
@@ -225,11 +225,52 @@ class LocationServiceTests: XCTestCase {
         
         self.waitForExpectationsWithTimeout(10, handler: nil)
     }
-
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock {
-            // Put the code you want to measure the time of here.
+    
+    func testGetDistanceToCoordinates() {
+        print("🎏🎏🎏")
+        // As service calls are asyncronous this entire interaction is wrapped in an XCTest expectation, and the timeout for expectations is 20 seconds.
+        // You can create new expectations and fulfill them in the testResponse and/or testData blocks.
+        // let's create an expectation, that we'll fulfill in the data block when we examine the return data. This will ensure our call actually does return data.
+        let dataExpectation = self.expectationWithDescription("\(#function): testData closure called expectation.")
+        
+        // Calls our location service
+        print("Calls our location service")
+        self.serviceTester(LocationService.self, path: "http://pmapi/location/distance?latitude=0.0&longitude=0.0", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
+            
+            print("💥💥💥")
+            
+            do {
+                guard let distanceResponseDictionary = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0)) as? [String: AnyObject] else {
+                    
+                    XCTAssertTrue(false, "distanceResponseDictionary was not the expected type: \(data)")
+                    return
+                }
+                
+                print(distanceResponseDictionary)
+                
+                guard let locationResponseStatus = Status.init(rawValue: (distanceResponseDictionary["status"] as? String) ?? "")  else
+                {
+                    XCTAssertTrue(false, "Status key with string value was not found in response data.")
+                    return
+                    
+                }
+                switch locationResponseStatus {
+                case .Success:
+                    print (distanceResponseDictionary["latitude"])
+                    print (distanceResponseDictionary["longitude"])
+                    XCTAssertNotNil(distanceResponseDictionary["latitude"] as? String, "Latitude key with string value was not found in response data.")
+                    XCTAssertNotNil(distanceResponseDictionary["longitude"] as? String, "Longitude key with string value was not found in response data.")
+                    XCTAssertNotNil(distanceResponseDictionary["distance"] as? String, "Distance key with string value was not found in response data.")
+                case .Error:
+                    print (distanceResponseDictionary["message"])
+                    XCTAssertNotNil(distanceResponseDictionary["message"] as? String, "Message key with string value was not found in response data")
+                }
+            } catch let error {
+                XCTAssertTrue(false, "JSON deserialization of the returned data failed: \(error)")
+            }
+            
+            // fulfill our expectation.
+            dataExpectation.fulfill()
         }
     }
 
