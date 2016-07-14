@@ -17,6 +17,11 @@ enum SingleLocationReturn {
     case Error(SingleLocationError)
 }
 
+enum DistanceReturn {
+    case Success(location: CLLocation, distance: CLLocationDistance)
+    case Error(SingleLocationError)
+}
+
 /**
  Error cases from SingleLocation functionality
 */
@@ -149,4 +154,20 @@ class SingleLocationManager: NSObject, SingleLocationProtocol, CLLocationManager
         locationReceived(.Success(location))
     }
     
+}
+
+extension SingleLocationManager {
+    internal static func getDistanceToCoordinate(destination: CLLocation, completion: (DistanceReturn) -> ()) {
+        
+        fetchSingleLocation { (locationReturn) in
+            switch locationReturn {
+            case .Success(let location):
+                let distance = location.distanceFromLocation(destination)
+                completion(DistanceReturn.Success(location: location, distance: distance))
+                break
+            case .Error(let error):
+                completion(DistanceReturn.Error(error))
+            }
+        }
+    }
 }
