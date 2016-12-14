@@ -22,7 +22,7 @@ extension CLPlacemark {
     func getSerializeableDictionary() -> [String: String] {
         var placemarkDictionary = [String: String]()
         
-        func addEntryIfNotNil(key: String, value: String?) {
+        func addEntryIfNotNil(_ key: String, value: String?) {
             guard let _value = value else {
                 return
             }
@@ -30,7 +30,7 @@ extension CLPlacemark {
         }
         
         addEntryIfNotNil("name", value: self.name)
-        addEntryIfNotNil("countryCode", value: self.ISOcountryCode)
+        addEntryIfNotNil("countryCode", value: self.isoCountryCode)
         addEntryIfNotNil("country", value: self.country)
         addEntryIfNotNil("postalCode", value: self.postalCode)
         addEntryIfNotNil("adminstrativeArea", value: self.administrativeArea)
@@ -70,26 +70,26 @@ struct AddressInformation {
 }
 
 enum AddressInformationReturn {
-    case Success([String: String])
-    case Error(String)
+    case success([String: String])
+    case error(String)
 }
 
 
 class GetReverseGeocode {
     
-    static func getAddressPropertiesForLocationCoordinates(latitude: Double, longitude: Double, completion: (AddressInformationReturn)->()) {
+    static func getAddressPropertiesForLocationCoordinates(_ latitude: Double, longitude: Double, completion: @escaping (AddressInformationReturn)->()) {
         let location = CLLocation(latitude: latitude, longitude: longitude)
         CLGeocoder().reverseGeocodeLocation(location) { (placemarks, error) -> Void in
             if let errorUnwrapped = error {
-                completion(AddressInformationReturn.Error("Reverse geocoder failed with error: \(errorUnwrapped.localizedDescription)"))
+                completion(AddressInformationReturn.error("Reverse geocoder failed with error: \(errorUnwrapped.localizedDescription)"))
                 return
             }
             guard let placemark = placemarks?[0] else {
-                completion(AddressInformationReturn.Error("No data received from reverse geocoder."))
+                completion(AddressInformationReturn.error("No data received from reverse geocoder."))
                 return
             }
             
-            completion(AddressInformationReturn.Success(placemark.getSerializeableDictionary()))
+            completion(AddressInformationReturn.success(placemark.getSerializeableDictionary()))
         }
     }
 }

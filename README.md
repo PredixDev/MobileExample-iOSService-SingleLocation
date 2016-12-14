@@ -31,19 +31,6 @@ To get started, follow this documentation:
   
   ![AddLocationKey.gif](resources/75B6B38EFF0DB9A851B60D2C36B8AED7.gif).
   
-3. Comment out the testing code in AppDelegate.swift
-
-  In the iOS Predix Mobile Container app, there is a section of code used to quit the simulator while running unit tests.  For this example, however, we want the simulator to run so that the prompt to ask the user for their location appears, allowing you to Allow or Deny location services.
-  
-  Open the `AppDelegate.swift` file and comment out the following lines: 
-  
-  ```
-  if NSProcessInfo.processInfo().environment["XCInjectBundle"] != nil {
-      // Exit if we're running unit tests...
-      PGSDKLogger.debug("Detected running functional unit tests, not starting normal services or running normal UI processes")
-      return true
-  }
-  ```
 
 ##Step 2 - Register your new service
 

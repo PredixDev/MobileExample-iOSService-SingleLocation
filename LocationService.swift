@@ -24,14 +24,14 @@ enum Paths: String {
     
     
     // meat of the service -- where requests to this service come in
-    static func performRequest(request: NSURLRequest, response: NSHTTPURLResponse, responseReturn: responseReturnBlock, dataReturn: dataReturnBlock, requestComplete: requestCompleteBlock){
+    static func performRequest(_ request: URLRequest, response: HTTPURLResponse, responseReturn: @escaping responseReturnBlock, dataReturn: @escaping dataReturnBlock, requestComplete: @escaping requestCompleteBlock){
         
         
         // First let's examine the request. In this example, we're going to expect only a GET request, and the URL path should only contain "singlelocation"
         
         // we'll use a guard statement here just to verify the request object is valid. The HTTPMethod and URL properties of a NSURLRequest
         // are optional, and we need to ensure we're dealing with a request that contains them.
-        guard let url = request.URL, path = url.path, method = request.HTTPMethod else
+        guard let url = request.url, let method = request.httpMethod else
         {
             /* ****************************
             if the request does not contain a URL or a HTTPMethod, then we return a error. We'll also return an error if the URL
@@ -45,10 +45,11 @@ enum Paths: String {
             the reponseReturn and requestComplete blocks for you. Once a respondWithErrorStatus method is called, the performRequest
             method should not continue processing and should always return.
             **************************** */
-            self.respondWithErrorStatus(.BadRequest, response, responseReturn, requestComplete)
+            self.respondWithErrorStatus(.badRequest, response, responseReturn, requestComplete)
             return
         }
         
+        let path = url.path
         /* ****************************
         Path in this case should match the serviceIdentifier, or "location". We know the serviceIdentifier is all
         lower case, so we ensure the path is too before comparing.
@@ -62,23 +63,23 @@ enum Paths: String {
         **************************** */
         print("path: \(path)")
         
-        switch path.lowercaseString {
+        switch path.lowercased() {
         case "/location/single":
             LocationService.performRequestSingle(method, url: url, response: response, responseReturn: responseReturn, dataReturn: dataReturn, requestComplete: requestComplete)
         case "/location/address":
             LocationService.performRequestAddress(method, url: url, response: response, responseReturn: responseReturn, dataReturn: dataReturn, requestComplete: requestComplete)
         default:
-            self.respondWithErrorStatus(.BadRequest, response, responseReturn, requestComplete)
+            self.respondWithErrorStatus(.badRequest, response, responseReturn, requestComplete)
             return
         }
     }
     
-    static func performRequestSingle(method: String, url: NSURL, response: NSHTTPURLResponse, responseReturn: responseReturnBlock, dataReturn: dataReturnBlock, requestComplete: requestCompleteBlock){
+    static func performRequestSingle(_ method: String, url: URL, response: HTTPURLResponse, responseReturn: @escaping responseReturnBlock, dataReturn: @escaping dataReturnBlock, requestComplete: @escaping requestCompleteBlock){
         
         guard url.query == nil else
         {
             // In this case, if the request URL is anything other than "http://pmapi/location/single" we're returning a 400 status code.
-            self.respondWithErrorStatus(.BadRequest, response, responseReturn, requestComplete)
+            self.respondWithErrorStatus(.badRequest, response, responseReturn, requestComplete)
             return
         }
         
@@ -91,23 +92,23 @@ enum Paths: String {
             let headers = ["Allow" : "GET"]
             
             // This respondWithErrorStatus overload allows additional headers to be passed that will be added to the response.
-            self.respondWithErrorStatus(HTTPStatusCode.MethodNotAllowed, response, responseReturn, requestComplete, headers)
+            self.respondWithErrorStatus(HTTPStatusCode.methodNotAllowed, response, responseReturn, requestComplete, headers)
  
             return
         }
         
         
-        var responseData = [String: AnyObject]()
+        var responseData = [String: Any]()
         SingleLocationManager.fetchSingleLocation { (locationType) -> Void in
             switch locationType {
-            case .Success(let location):
-                responseData["status"] = "success"
+            case .success(let location):
+                responseData["status"] = "success" as AnyObject?
                 responseData["latitude"] = "\(location.coordinate.latitude)"
                 responseData["longitude"] = "\(location.coordinate.longitude)"
-            case .Error(let errorType):
+            case .error(let errorType):
                 switch errorType {
-                case .Error(let message):
-                    responseData["status"] = "error"
+                case .error(let message):
+                    responseData["status"] = "error" as AnyObject?
                     responseData["message"] = message
                 }
             }
@@ -116,7 +117,7 @@ enum Paths: String {
             // NSJSONSerialization.dataWithJSONObject can throw, so we'll do this in a do/try/catch statement.
             do
             {
-                let data = try NSJSONSerialization.dataWithJSONObject(responseData, options: NSJSONWritingOptions(rawValue: 0))
+                let data = try JSONSerialization.data(withJSONObject: responseData, options: JSONSerialization.WritingOptions(rawValue: 0))
                 
                 
                 // Now our JSON data object contains a serialized JSON dictionary ready for consumption by the caller.
@@ -139,10 +140,10 @@ enum Paths: String {
             catch let error
             {
                 // Log the error
-                PGSDKLogger.error("\(__FUNCTION__): JSON Serialization error: \(error)")
+                Logger.error("\(#function): JSON Serialization error: \(error)")
                 
                 // And return a 500 (Internal Server Error) status code reponse.
-                self.respondWithErrorStatus(.InternalServerError, response, responseReturn, requestComplete)
+                self.respondWithErrorStatus(.internalServerError, response, responseReturn, requestComplete)
                 return
             }
         }
@@ -151,7 +152,7 @@ enum Paths: String {
     }
     
     
-    static func performRequestAddress(method: String, url: NSURL, response: NSHTTPURLResponse, responseReturn: responseReturnBlock, dataReturn: dataReturnBlock, requestComplete: requestCompleteBlock) {
+    static func performRequestAddress(_ method: String, url: URL, response: HTTPURLResponse, responseReturn: @escaping responseReturnBlock, dataReturn: @escaping dataReturnBlock, requestComplete: @escaping requestCompleteBlock) {
         
         
         
@@ -162,44 +163,44 @@ enum Paths: String {
             let headers = ["Allow" : "GET"]
             
             // This respondWithErrorStatus overload allows additional headers to be passed that will be added to the response.
-            self.respondWithErrorStatus(HTTPStatusCode.MethodNotAllowed, response, responseReturn, requestComplete, headers)
+            self.respondWithErrorStatus(HTTPStatusCode.methodNotAllowed, response, responseReturn, requestComplete, headers)
             
             return
         }
         
-        guard let urlComponents = NSURLComponents(URL:url, resolvingAgainstBaseURL: false), queryItems = urlComponents.queryItems where queryItems.count == 2 else
+        guard let urlComponents = URLComponents(url:url, resolvingAgainstBaseURL: false), let queryItems = urlComponents.queryItems, queryItems.count == 2 else
         {
-            self.respondWithErrorStatus(.BadRequest, description: "Expected exactly 2 query parameters: 'latitude' and 'longitude'", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
+            self.respondWithErrorStatus(.badRequest, description: "Expected exactly 2 query parameters: 'latitude' and 'longitude'", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
             return
         }
         
-        guard let latitudeIndex = queryItems.indexOf({ (queryItem) -> Bool in
+        guard let latitudeIndex = queryItems.index(where: { (queryItem) -> Bool in
             queryItem.name == "latitude"
         }),
-        latitudeString = queryItems[latitudeIndex].value,
-        latitude = Double(latitudeString)
+        let latitudeString = queryItems[latitudeIndex].value,
+        let latitude = Double(latitudeString)
         else {
-            self.respondWithErrorStatus(.BadRequest, description: "Parameter 'latitude' of type Double not found in query", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
+            self.respondWithErrorStatus(.badRequest, description: "Parameter 'latitude' of type Double not found in query", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
             return
         }
         
-        guard let longitudeIndex = queryItems.indexOf({ (queryItem) -> Bool in
+        guard let longitudeIndex = queryItems.index(where: { (queryItem) -> Bool in
             queryItem.name == "longitude"
         }),
-        longitudeString = queryItems[longitudeIndex].value,
-        longitude = Double(longitudeString)
+        let longitudeString = queryItems[longitudeIndex].value,
+        let longitude = Double(longitudeString)
         else {
-            self.respondWithErrorStatus(.BadRequest, description: "Parameter 'longitude' of type Double not found in query", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
+            self.respondWithErrorStatus(.badRequest, description: "Parameter 'longitude' of type Double not found in query", dataReturn: dataReturn, response: response, responseReturn: responseReturn, requestComplete: requestComplete)
             return
         }
         
         var responseData = [String: String]()
         GetReverseGeocode.getAddressPropertiesForLocationCoordinates(latitude, longitude: longitude) { (addressType) -> () in
             switch addressType {
-            case .Success(let address):
+            case .success(let address):
                 responseData = address
                 responseData["status"] = "success"
-            case .Error(let message):
+            case .error(let message):
                 responseData["status"] = "error"
                 responseData["message"] = message
             }
@@ -208,7 +209,7 @@ enum Paths: String {
             // NSJSONSerialization.dataWithJSONObject can throw, so we'll do this in a do/try/catch statement.
             do
             {
-                let data = try NSJSONSerialization.dataWithJSONObject(responseData, options: NSJSONWritingOptions(rawValue: 0))
+                let data = try JSONSerialization.data(withJSONObject: responseData, options: JSONSerialization.WritingOptions(rawValue: 0))
                 
                 
                 // Now our JSON data object contains a serialized JSON dictionary ready for consumption by the caller.
@@ -231,10 +232,10 @@ enum Paths: String {
             catch let error
             {
                 // Log the error
-                PGSDKLogger.error("\(__FUNCTION__): JSON Serialization error: \(error)")
+                Logger.error("\(#function): JSON Serialization error: \(error)")
                 
                 // And return a 500 (Internal Server Error) status code reponse.
-                self.respondWithErrorStatus(.InternalServerError, response, responseReturn, requestComplete)
+                self.respondWithErrorStatus(.internalServerError, response, responseReturn, requestComplete)
                 return
             }
             

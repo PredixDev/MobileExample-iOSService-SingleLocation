@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import PredixMobileReferenceApp
+@testable import PredixMobileiOS
 import PredixMobileSDK
 import CoreLocation
 
@@ -29,23 +29,23 @@ class LocationServiceTests: XCTestCase {
         // AUTHORIZED
         locationManagerAuthorized = SingleLocationManager()
         locationManagerAuthorized.authorizationStatus = {
-            return CLAuthorizationStatus.AuthorizedWhenInUse
+            return CLAuthorizationStatus.authorizedWhenInUse
         }
         locationManagerAuthorized.authorizationStatusWithStatus = { (status) -> (CLAuthorizationStatus) in
-            return CLAuthorizationStatus.AuthorizedWhenInUse
+            return CLAuthorizationStatus.authorizedWhenInUse
         }
         locationManagerAuthorized.startUpdatingLocation = { (manager)->() in
             let location = CLLocation(latitude: 1.2,longitude: 2.0)
-            self.locationManagerAuthorized._locationCompletion!(.Success(location))
+            self.locationManagerAuthorized._locationCompletion!(.success(location))
         }
         
         // UNAUTHORIZED
         locationManagerUnauthorized = SingleLocationManager()
         locationManagerUnauthorized.authorizationStatus = {
-            return CLAuthorizationStatus.Denied
+            return CLAuthorizationStatus.denied
         }
         locationManagerUnauthorized.authorizationStatusWithStatus = { (status) -> (CLAuthorizationStatus) in
-            return CLAuthorizationStatus.Denied
+            return CLAuthorizationStatus.denied
         }
         
         
@@ -57,31 +57,31 @@ class LocationServiceTests: XCTestCase {
     }
     
     func testLocationUtilityAuthorized() {
-        let testExpectation = self.expectationWithDescription("We expect the location completion block to run.")
+        let testExpectation = self.expectation(description: "We expect the location completion block to run.")
         self.locationManagerAuthorized.fetchLocationWithCompletion({ (locationType) -> () in
             switch locationType {
-                case .Success(let location):
+                case .success(let location):
                     print(location)
-                case .Error:
+                case .error:
                     XCTAssertTrue(false, "Expected a location, but received an ERROR")
             }
             
             testExpectation.fulfill()
         })
         // Wait so that we have time to click Allow or Deny for location services in the simulator.  If it takes longer than 20 seconds to do this, then this will fail.  However, if it takes you longer than 20 seconds to click a button, you should start some sort of agility training.
-        self.waitForExpectationsWithTimeout(20, handler: nil)
+        self.waitForExpectations(timeout: 20, handler: nil)
     }
     
     
     func testLocationUtilityUnauthorized() {
-        let testExpectation = self.expectationWithDescription("We expect the location completion block to run.")
+        let testExpectation = self.expectation(description: "We expect the location completion block to run.")
         self.locationManagerUnauthorized.fetchLocationWithCompletion({ (locationType) -> () in
             switch locationType {
-            case .Success:
+            case .success:
                 XCTAssertTrue(false, "Expected an ERROR but got a location, small victories?")
-            case .Error(let errorType):
+            case .error(let errorType):
                 switch errorType {
-                case .Error(let message):
+                case .error(let message):
                     print("Location Error: \(message)")
                 }
             }
@@ -89,7 +89,7 @@ class LocationServiceTests: XCTestCase {
             testExpectation.fulfill()
         })
         // Wait so that we have time to click Allow or Deny for location services in the simulator.  If it takes longer than 20 seconds to do this, then this will fail.  However, if it takes you longer than 20 seconds to click a button, you should start some sort of agility training.
-        self.waitForExpectationsWithTimeout(20, handler: nil)
+        self.waitForExpectations(timeout: 20, handler: nil)
     }
     
     
@@ -98,16 +98,16 @@ class LocationServiceTests: XCTestCase {
         // As service calls are asyncronous this entire interaction is wrapped in an XCTest expectation, and the timeout for expectations is 20 seconds.
         // You can create new expectations and fulfill them in the testResponse and/or testData blocks.
         // let's create an expectation, that we'll fulfill in the data block when we examine the return data. This will ensure our call actually does return data.
-        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        let dataExpectation = self.expectation(description: "\(#function): testData closure called expectation.")
         
         // Calls our location service
         print("Calls our location service")
-        self.serviceTester(LocationService.self, path: "http://pmapi/location/single", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
+        self.serviceTester(LocationService.self, path: "http://pmapi/location/single", expectedStatusCode: HTTPStatusCode.ok, testResponse: nil) { (data) in
             
             print("💥💥💥")
             
             do {
-                guard let locationResponseDictionary = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0)) as? [String: AnyObject] else {
+                guard let locationResponseDictionary = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions(rawValue: 0)) as? [String: Any] else {
                     
                     XCTAssertTrue(false, "locationResponseDictionary was not the expected type: \(data)")
                     return
@@ -123,12 +123,12 @@ class LocationServiceTests: XCTestCase {
                 }
                 switch locationResponseStatus {
                 case .Success:
-                    print (locationResponseDictionary["latitude"])
-                    print (locationResponseDictionary["longitude"])
+                    print (locationResponseDictionary["latitude"] ?? "nil")
+                    print (locationResponseDictionary["longitude"] ?? "nil")
                     XCTAssertNotNil(locationResponseDictionary["latitude"] as? String, "Latitude key with string value was not found in response data.")
                     XCTAssertNotNil(locationResponseDictionary["longitude"] as? String, "Longitude key with string value was not found in response data.")
                 case .Error:
-                    print (locationResponseDictionary["message"])
+                    print (locationResponseDictionary["message"] ?? "nil")
                     XCTAssertNotNil(locationResponseDictionary["message"] as? String, "Message key with string value was not found in response data")
                 }
             } catch let error {
@@ -142,13 +142,13 @@ class LocationServiceTests: XCTestCase {
     
     func testAddressSuccess(){
         
-        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        let dataExpectation = self.expectation(description: "\(#function): testData closure called expectation.")
         
         //Calls the location service with the coordinate parameters
-        self.serviceTester(LocationService.self, path: "http://pmapi/location/address?latitude=38.8977&longitude=-77.0366", expectedStatusCode: HTTPStatusCode.OK, testResponse: nil) { (data) in
+        self.serviceTester(LocationService.self, path: "http://pmapi/location/address?latitude=38.8977&longitude=-77.0366", expectedStatusCode: HTTPStatusCode.ok, testResponse: nil) { (data) in
             
             do {
-                guard let addressResponseDictionary = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0)) as? [String: AnyObject] else {
+                guard let addressResponseDictionary = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions(rawValue: 0)) as? [String: Any] else {
                     
                     XCTAssertTrue(false, "locationResponseDictionary was not the expected type: \(data)")
                     return
@@ -185,21 +185,21 @@ class LocationServiceTests: XCTestCase {
     
     func testLocationUnacceptedMethod() {
         // Our request url string
-        let path = "\(API_SCHEME)://\(PredixMobilityConfiguration.API_HOST)/location/single"
+        let path = "\(ApiScheme)://\(PredixMobilityConfiguration.apiHostname)/location/single"
         
         // create a mutable request:
-        let request = NSMutableURLRequest(URL: NSURL(string: path)!)
+        var request = URLRequest(url: URL(string: path)!)
         
         // change the HTTPMethod to POST
-        request.HTTPMethod = "POST"
+        request.httpMethod = "POST"
         
         // now we run the service tester. Since we're expecting an error, and our service only returns data when there are no errors, we
         // don't need a testData block. But, we will include a testResponse block to ensure our headers are being added properly.
-        self.serviceTester(LocationService.self, request: request, expectedStatusCode: .MethodNotAllowed, testResponse: { (response: NSURLResponse) -> Void in
+        self.serviceTester(LocationService.self, request: request, expectedStatusCode: .methodNotAllowed, testResponse: { (response: URLResponse) -> Void in
             
             // we need to cast the reponse. We could be more defensive here by optionally casting and doing an XCTAssert if it failed...
             
-            let httpResponse = response as! NSHTTPURLResponse
+            let httpResponse = response as! HTTPURLResponse
             
             // now check that our expected "Allow" header is there, and is the value we expect.
             XCTAssertEqual(httpResponse.allHeaderFields["Allow"] as? String, "GET", "Allow header was not as expected")
@@ -208,27 +208,27 @@ class LocationServiceTests: XCTestCase {
     }
     
     func testGetAddressFromLocationCoordinates() {
-        let dataExpectation = self.expectationWithDescription("\(__FUNCTION__): testData closure called expectation.")
+        let dataExpectation = self.expectation(description: "\(#function): testData closure called expectation.")
         
         GetReverseGeocode.getAddressPropertiesForLocationCoordinates(38.8977, longitude: -77.0366) { (addressType) in
             
             switch addressType {
-            case .Success(let addressInformation):
+            case .success(let addressInformation):
                 print(addressInformation)
                 break
-            case .Error(let message):
+            case .error(let message):
                 XCTAssertTrue(false, "Received error when expecting address information. \(message)")
             }
             
             dataExpectation.fulfill()
         }
         
-        self.waitForExpectationsWithTimeout(10, handler: nil)
+        self.waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testPerformanceExample() {
         // This is an example of a performance test case.
-        self.measureBlock {
+        self.measure {
             // Put the code you want to measure the time of here.
         }
     }
