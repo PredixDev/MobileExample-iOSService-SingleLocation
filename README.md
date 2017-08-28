@@ -45,7 +45,7 @@ PredixMobilityConfiguration.loadConfiguration()
 Directly after that line, add the following:
 
 ```
-PredixMobilityConfiguration.additionalBootServicesToRegister = [LocationService.self]
+PredixMobilityConfiguration.additionalBootServicesToRegister.append(LocationService.self)
 ```
 
 This informs the iOS Predix Mobile SDK framework to load your new service when the app starts, thus making it available to your webapp.

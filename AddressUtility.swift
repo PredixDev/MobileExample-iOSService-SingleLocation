@@ -21,14 +21,14 @@ import CoreLocation
 extension CLPlacemark {
     func getSerializeableDictionary() -> [String: String] {
         var placemarkDictionary = [String: String]()
-        
+
         func addEntryIfNotNil(_ key: String, value: String?) {
             guard let _value = value else {
                 return
             }
             placemarkDictionary[key] = _value
         }
-        
+
         addEntryIfNotNil("name", value: self.name)
         addEntryIfNotNil("countryCode", value: self.isoCountryCode)
         addEntryIfNotNil("country", value: self.country)
@@ -41,11 +41,10 @@ extension CLPlacemark {
         addEntryIfNotNil("subThoroughfare", value: self.subThoroughfare)
         addEntryIfNotNil("inlandWater", value: self.inlandWater)
         addEntryIfNotNil("ocean", value: self.ocean)
-        
+
         return placemarkDictionary
     }
 }
-
 
 struct AddressInformation {
     let countryCode: String?
@@ -55,7 +54,7 @@ struct AddressInformation {
     let city: String?
     let street: String?
     let streetNumber: String?
-    
+
     var serializableDictionary: [String: String] {
         return [
             "countryCode": countryCode ?? "",
@@ -64,7 +63,7 @@ struct AddressInformation {
             "state": state ?? "",
             "city": city ?? "",
             "street": street ?? "",
-            "streetNumber": streetNumber ?? "",
+            "streetNumber": streetNumber ?? ""
         ]
     }
 }
@@ -74,10 +73,9 @@ enum AddressInformationReturn {
     case error(String)
 }
 
-
 class GetReverseGeocode {
-    
-    static func getAddressPropertiesForLocationCoordinates(_ latitude: Double, longitude: Double, completion: @escaping (AddressInformationReturn)->()) {
+
+    static func getAddressPropertiesForLocationCoordinates(_ latitude: Double, longitude: Double, completion: @escaping (AddressInformationReturn) -> Void) {
         let location = CLLocation(latitude: latitude, longitude: longitude)
         CLGeocoder().reverseGeocodeLocation(location) { (placemarks, error) -> Void in
             if let errorUnwrapped = error {
@@ -88,7 +86,7 @@ class GetReverseGeocode {
                 completion(AddressInformationReturn.error("No data received from reverse geocoder."))
                 return
             }
-            
+
             completion(AddressInformationReturn.success(placemark.getSerializeableDictionary()))
         }
     }

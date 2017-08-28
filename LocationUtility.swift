@@ -24,13 +24,11 @@ enum SingleLocationError {
     case error(String)
 }
 
-
 protocol SingleLocationProtocol {
-    
-    func fetchLocationWithCompletion(_ completion: @escaping (SingleLocationReturn)->())
-    
-}
 
+    func fetchLocationWithCompletion(_ completion: @escaping (SingleLocationReturn) -> Void)
+
+}
 
 /* // EXAMPLE
 class ClassThatNeedsLocation {
@@ -58,51 +56,50 @@ class ClassThatNeedsLocation {
 */
 
 class SingleLocationManager: NSObject, SingleLocationProtocol, CLLocationManagerDelegate {
-    
+
     fileprivate var locationManager: CLLocationManager?
-    
+
     // Expose for testing
-    internal var _locationCompletion: ((SingleLocationReturn)->())?
-    
+    internal var _locationCompletion: ((SingleLocationReturn) -> Void)?
+
     // This allows us to mock Apple's functionality that shows the pop-up when location is
-    var authorizationStatus: ()->(CLAuthorizationStatus) = {
+    var authorizationStatus: () -> (CLAuthorizationStatus) = {
         return CLLocationManager.authorizationStatus()
     }
-    var authorizationStatusWithStatus: (CLAuthorizationStatus?)->(CLAuthorizationStatus) = { (status) -> (CLAuthorizationStatus) in 
+    var authorizationStatusWithStatus: (CLAuthorizationStatus?) -> (CLAuthorizationStatus) = { (status) -> (CLAuthorizationStatus) in
         return status!
     }
 
-    var startUpdatingLocation: (CLLocationManager?)->() = { (manager)->() in
+    var startUpdatingLocation: (CLLocationManager?) -> Void = { (manager) -> Void in
         manager!.startUpdatingLocation()
     }
-    
-    
+
     //destroy the manager
     deinit {
         print("🌋 deinitializing...")
         locationManager?.delegate = nil
         locationManager = nil
     }
-    
+
     /**
      Wrapper around fetchLocationWithCompletion so that we can handle the fact that an instance of SingleLocationManager needs to stay around in memory until the time when we actually receive a location.  To do this, we pass the instance of SingleLocationManager into the completion closure so that it has something referencing it until the time the closure is run.  After we get the location, we remove the reference by setting _locationCompletion to nil in the locationReceived method.
     */
-    static func fetchSingleLocation(_ completion: @escaping (SingleLocationReturn) -> ()) {
+    static func fetchSingleLocation(_ completion: @escaping (SingleLocationReturn) -> Void) {
         // Instantiate a new SingleLocationManager
         let locationManager = SingleLocationManager()
         // Call the normal location fetching method
-        locationManager.fetchLocationWithCompletion { (locationType) -> () in
+        locationManager.fetchLocationWithCompletion { (locationType) -> Void in
             // Store a reference to our location manager
             _ = locationManager
             // Call the closure that the user of this method passed through
             completion(locationType)
         }
     }
-    
+
     /**
      Wrapper around locationCompletion.  Handles the fact that we only want to get the location once, and not a continous stream of locations.
     */
-    fileprivate func locationReceived(_ location: SingleLocationReturn){
+    fileprivate func locationReceived(_ location: SingleLocationReturn) {
         locationManager?.stopUpdatingLocation()
         _locationCompletion?(location)
         locationManager?.delegate = nil
@@ -110,24 +107,24 @@ class SingleLocationManager: NSObject, SingleLocationProtocol, CLLocationManager
         // This will prevent memory leaks because we need access to ourself in _locationCompletion so that our object doesn't disappear
         _locationCompletion = nil
     }
-    
+
     /**
      Location fetching method to be called when we have an instance of SingleLocationManager.  When using this method, ensure that you retain the instance of SingleLocationManager until we receive a location from CLLocationManager and call _locationCompletion; otherwise, we'll lose the reference to the instance, and the completion closure will never be run, because we will have never received a location.
     */
-    func fetchLocationWithCompletion(_ completion: @escaping (SingleLocationReturn) -> ()) {
+    func fetchLocationWithCompletion(_ completion: @escaping (SingleLocationReturn) -> Void) {
         //store the completion closure
         _locationCompletion = completion
-        
+
         //fire the location manager
         locationManager = CLLocationManager()
         locationManager!.delegate = self
-        
+
         // Check if the user has not been prompted for location yet
         if self.authorizationStatus() == .notDetermined {
             locationManager!.requestWhenInUseAuthorization()
         }
     }
-    
+
     //location authorization status changed
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
 
@@ -142,11 +139,11 @@ class SingleLocationManager: NSObject, SingleLocationProtocol, CLLocationManager
             print("🎁")
         }
     }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]){
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         print("🐣🐣🐣 Location Received")
         let location = locations[0]
         locationReceived(.success(location))
     }
-    
+
 }
